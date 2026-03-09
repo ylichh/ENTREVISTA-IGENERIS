@@ -1,0 +1,11 @@
+[project]
+name = "entrevista-igeneris"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.135.1",
+    "pycountry>=26.2.16",
+    "pytrends>=4.9.2",
+]

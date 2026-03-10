@@ -1,9 +1,10 @@
 from pytrends.request import TrendReq
 import pandas as pd
 from src.utils.geo_resolver import resolve_geo_code
+from src.data_sources.base_connector import TrendsConnector
 
 
-class GoogleTrendsConnector:
+class GoogleTrendsConnector(TrendsConnector):
     """
     Connector para Google Trends usando pytrends (no requiere API key).
 
@@ -20,7 +21,12 @@ class GoogleTrendsConnector:
             hl: idioma de la interfaz de Google Trends (ej: "es", "en", "de")
             tz: timezone offset en minutos (60 = Europa Central)
         """
-        self.pytrends = TrendReq(hl=hl, tz=tz)
+        self._hl = hl
+        self._tz = tz
+
+    def _fresh_client(self) -> TrendReq:
+        """Instancia nueva por llamada para evitar filtrado de estado entre requests."""
+        return TrendReq(hl=self._hl, tz=self._tz)
 
     def _build_payload(
         self,
@@ -39,6 +45,7 @@ class GoogleTrendsConnector:
         if len(keywords) > 5:
             raise ValueError("Google Trends admite máximo 5 keywords por consulta")
 
+        self.pytrends = self._fresh_client()
         self.pytrends.build_payload(
             kw_list=keywords,
             geo=geo,
@@ -55,12 +62,9 @@ class GoogleTrendsConnector:
         destination: str,
         from_country: str = "",
         timeframe: str = "today 12-m",
-    ) -> dict[str, pd.DataFrame | None]:
+    ) -> dict:
         """
         Qué busca la gente SOBRE un destino turístico.
-
-        Usa el nombre del destino como keyword y extrae las queries relacionadas:
-        esto revela qué aspectos interesan (playas, gastronomía, hoteles, etc.)
 
         Args:
             destination: nombre del destino (ej: "Andalucía", "Sevilla", "Costa del Sol")
@@ -69,43 +73,71 @@ class GoogleTrendsConnector:
             timeframe: rango temporal
 
         Returns:
-            dict con:
-                - "top": queries más buscadas junto al destino (DataFrame)
-                - "rising": queries que más están creciendo (DataFrame)
+            dict con: destination, from_country, top_queries, rising_queries
         """
         self._build_payload([destination], geo=from_country, timeframe=timeframe)
         related = self.pytrends.related_queries()
         result = related.get(destination, {})
+        top_df = result.get("top")
+        rising_df = result.get("rising")
         return {
             "destination": destination,
             "from_country": from_country or "worldwide",
             "timeframe": timeframe,
-            "top": result.get("top"),
-            "rising": result.get("rising"),
+            "top_queries": top_df.head(10).to_dict("records") if top_df is not None else [],
+            "rising_queries": rising_df.head(10).to_dict("records") if rising_df is not None else [],
         }
+
+    def _get_interest_by_origin(
+        self,
+        destination: str,
+        geo: str,
+        resolution: str,
+        timeframe: str,
+    ) -> list:
+        self._build_payload([destination], geo=geo, timeframe=timeframe)
+        df = self.pytrends.interest_by_region(resolution=resolution, inc_low_vol=False)
+        return (
+            df[df[destination] > 0]
+            .sort_values(by=destination, ascending=False)
+            .head(10)
+            .reset_index()
+            .to_dict("records")
+            if not df.empty else []
+        )
 
     def get_interest_by_origin_country(
         self,
         destination: str,
         timeframe: str = "today 12-m",
-    ) -> pd.DataFrame:
+    ) -> dict:
         """
         Desde qué países buscan más sobre un destino (índice 0-100 por país).
-
-        Útil para identificar los mercados emisores más relevantes
-        → proxy de la nacionalidad del turista potencial.
 
         Args:
             destination: nombre del destino (ej: "Andalucía", "Mallorca")
             timeframe: rango temporal
-
-        Returns:
-            DataFrame con columna del destino indexado por país (geoName)
         """
-        self._build_payload([destination], geo="", timeframe=timeframe)
-        return self.pytrends.interest_by_region(resolution="COUNTRY", inc_low_vol=True)
+        results = self._get_interest_by_origin(destination, geo="", resolution="COUNTRY", timeframe=timeframe)
+        return {"destination": destination, "top_origin_countries": results}
 
+    def get_interest_by_origin_region(
+        self,
+        destination: str,
+        country: str,
+        timeframe: str = "today 12-m",
+    ) -> dict:
+        """
+        Desde qué regiones de un país buscan más sobre un destino (índice 0-100 por región).
 
+        Args:
+            destination: nombre del destino (ej: "Andalucía", "Mallorca")
+            country: país a desglosar por regiones (ej: "Germany", "DE")
+            timeframe: rango temporal
+        """
+        geo = resolve_geo_code(country)
+        results = self._get_interest_by_origin(destination, geo=geo, resolution="REGION", timeframe=timeframe)
+        return {"destination": destination, "country": country, "top_origin_regions": results}
 
     # ------------------------------------------------------------------
     # QUÉ BUSCA LA GENTE DESDE UNA REGIÓN
@@ -183,16 +215,25 @@ class GoogleTrendsConnector:
 
 
 if __name__ == "__main__":
+    import json
+
     connector = GoogleTrendsConnector()
-    destination="liliput"
-    origin_country="bayern"
-    destination_code = resolve_geo_code(destination)
-    origin_code = resolve_geo_code(origin_country)
-    print(f"Código geo para {destination}: {destination_code}")
-    print(f"Código geo para {origin_country}: {origin_code}")
-    queries = connector.get_searches_about_destination(destination, from_country=origin_code)
-    print(f"Tendencias de búsqueda SOBRE {destination} desde {origin_country}:")
-    print(queries)
-    print()
-    interest_by_country = connector.get_interest_by_origin_country(destination)
-    print(f"Interés por {destination} según país de origen:")
+    destination = "Andalucía"
+    from_country = "Germany"
+
+    from_country_code = resolve_geo_code(from_country)
+
+    print(f"=== get_searches_about_destination ===")
+    print(f"Destino: {destination} | Desde: {from_country} ({from_country_code})\n")
+    searches = connector.get_searches_about_destination(destination, from_country=from_country_code)
+    print(json.dumps(searches, ensure_ascii=False, indent=2, default=str))
+
+    print(f"\n=== get_interest_by_origin_country ===")
+    print(f"Destino: {destination}\n")
+    origins = connector.get_interest_by_origin_country(destination)
+    print(json.dumps(origins, ensure_ascii=False, indent=2, default=str))
+
+    print(f"\n=== get_interest_by_origin_region ===")
+    print(f"Destino: {destination} | País: {from_country}\n")
+    regions = connector.get_interest_by_origin_region(destination, from_country)
+    print(json.dumps(regions, ensure_ascii=False, indent=2, default=str))

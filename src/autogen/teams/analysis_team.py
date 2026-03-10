@@ -11,7 +11,7 @@ from autogen_agentchat.conditions import MaxMessageTermination, TextMentionTermi
 from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
-from src.autogen.analysis_agent import AutogenAgent
+from src.autogen.autogen_team import AutogenAgent
 
 SYSTEM_MESSAGE = """
 Eres un analista senior de demanda turística para una empresa europea de experiencias de viaje.

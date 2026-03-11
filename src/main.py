@@ -6,19 +6,22 @@ load_dotenv()
 
 
 def main_autogen(host: str, port: int):
-    from src.autogen_config import create_iterate_analysis
+    from src.autogen_config import create_generate_add, create_iterate_analysis
     from src.fastapi_controller.controller import AnalysisController
 
     use_case = create_iterate_analysis()
-    AnalysisController(use_case=use_case).run(host=host, port=port)
+    add_use_case = create_generate_add()
+    AnalysisController(use_case=use_case, add_use_case=add_use_case).run(host=host, port=port)
 
 
 def main_langchain(host: str, port: int):
-    from src.langchain_config import create_iterate_analysis
+    from src.autogen_config import create_generate_add
     from src.fastapi_controller.controller import AnalysisController
+    from src.langchain_config import create_iterate_analysis
 
     use_case = create_iterate_analysis()
-    AnalysisController(use_case=use_case).run(host=host, port=port)
+    add_use_case = create_generate_add()
+    AnalysisController(use_case=use_case, add_use_case=add_use_case).run(host=host, port=port)
 
 
 if __name__ == "__main__":

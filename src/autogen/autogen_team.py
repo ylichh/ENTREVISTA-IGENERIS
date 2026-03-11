@@ -20,14 +20,14 @@ class AutogenAgent(ChatHandler):
         self._team_builder = team_builder
         self._state: dict = {}
 
-    def handle(self, question: str, state: dict) -> tuple[str, dict]:
-        return asyncio.run(self._run(question, state))
+    def handle(self, user_input: str, state: dict) -> tuple[str, dict]:
+        return asyncio.run(self._run(user_input, state))
 
-    async def _run(self, question: str, state: dict) -> tuple[str, dict]:
+    async def _run(self, user_input: str, state: dict) -> tuple[str, dict]:
         team = self._team_builder.build()
         if state:
             await team.load_state(state)
-        result = await self._ask(team, question)
+        result = await self._ask(team, user_input)
         new_state = await team.save_state()
         return result.removesuffix("TERMINATE").strip(), new_state
 

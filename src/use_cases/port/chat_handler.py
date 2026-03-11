@@ -9,5 +9,5 @@ from abc import ABC, abstractmethod
 class ChatHandler(ABC):
 
     @abstractmethod
-    def handle(self, question: str, state) -> tuple[str, any]:
-        """Envía la pregunta al modelo con el estado y devuelve (respuesta, nuevo_estado)."""
+    def handle(self, user_input: str, state) -> tuple[str, any]:
+        """Envía el input al modelo con el estado y devuelve (respuesta, nuevo_estado)."""

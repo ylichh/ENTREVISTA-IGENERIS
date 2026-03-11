@@ -41,3 +41,10 @@ def create_iterate_analysis():
     memory = _resolve_memory_handler()
     handler = AutogenAgent(team_builder=AnalysisTeam(tools))
     return IterateAnalysis(chat_handler=handler, memory_handler=memory)
+
+
+def create_generate_add():
+    from src.image_generation.dalle_handler import DalleHandler
+    from src.use_cases.generate_add import GenerateAdd
+
+    return GenerateAdd(chat_handler=DalleHandler())

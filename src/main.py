@@ -5,29 +5,27 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def main_autogen():
-    from src.config import create_iterate_analysis
+def main_autogen(host: str, port: int):
+    from src.autogen_config import create_iterate_analysis
+    from src.fastapi_controller.controller import AnalysisController
 
     use_case = create_iterate_analysis()
-    question = "¿A quién podría vender experiencias turísticas en Andalucía?"
-    print("=== Autogen: análisis de demanda turística ===\n")
-    response = use_case.execute(question)
-    print(response)
+    AnalysisController(use_case=use_case).run(host=host, port=port)
 
 
-def main_langchain():
-    from src.app_config import create_iterate_analysis
+def main_langchain(host: str, port: int):
+    from src.langchain_config import create_iterate_analysis
+    from src.fastapi_controller.controller import AnalysisController
 
     use_case = create_iterate_analysis()
-    question = "¿A quién podría vender experiencias turísticas en Lima? necesito ademas las regiones de ese pais en concreto de donde vienen las consultas"
-    print("=== LangChain: análisis turístico ===\n")
-    response = use_case.execute(question)
-    print(response)
+    AnalysisController(use_case=use_case).run(host=host, port=port)
 
 
 if __name__ == "__main__":
     handler = os.environ.get("CHAT_HANDLER", "langchain")
+    host = os.environ.get("API_HOST", "0.0.0.0")
+    port = int(os.environ.get("API_PORT", "8000"))
     if handler == "autogen":
-        main_autogen()
+        main_autogen(host=host, port=port)
     else:
-        main_langchain()
+        main_langchain(host=host, port=port)

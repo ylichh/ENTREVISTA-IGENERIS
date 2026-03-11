@@ -13,8 +13,8 @@ class IterateAnalysis(AnalysisUseCase):
         self._chat_handler = chat_handler
         self._memory_handler = memory_handler
 
-    def execute(self, question: str) -> str:
-        state = self._memory_handler.get_state()
+    def execute(self, question: str, conversation_id: str) -> str:
+        state = self._memory_handler.get_state(conversation_id)
         response, new_state = self._chat_handler.handle(question, state)
-        self._memory_handler.update_state(new_state)
+        self._memory_handler.update_state(conversation_id, new_state)
         return response

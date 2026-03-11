@@ -9,13 +9,13 @@ from abc import ABC, abstractmethod
 class MemoryHandler(ABC):
 
     @abstractmethod
-    def get_state(self):
-        """Devuelve el estado de la conversación (formato dependiente del framework)."""
+    def get_state(self, conversation_id: str):
+        """Devuelve el estado de la conversación identificada por conversation_id."""
 
     @abstractmethod
     def add(self, message) -> None:
         """Añade un mensaje al historial."""
 
     @abstractmethod
-    def update_state(self, state) -> None:
-        """Reemplaza el estado completo de la conversación."""
+    def update_state(self, conversation_id: str, state) -> None:
+        """Reemplaza el estado completo de la conversación identificada por conversation_id."""

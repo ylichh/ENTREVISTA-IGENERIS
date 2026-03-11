@@ -19,15 +19,25 @@ def _resolve_trends_connector():
     return GoogleTrendsConnector()
 
 
+def _resolve_memory_handler():
+    memory_type = os.environ.get("MEMORY_HANDLER", "inmemory")
+    if memory_type == "mongo":
+        from src.memory.mongo_autogen_handler import MongoAutogenHandler
+        uri = os.environ["MONGO_URI"]
+        db_name = os.environ["MONGO_DB"]
+        return MongoAutogenHandler(uri=uri, db_name=db_name)
+    from src.memory.in_memory_autogen_handler import InMemoryAutogenHandler
+    return InMemoryAutogenHandler()
+
+
 def create_iterate_analysis():
     from src.autogen.tools.trends_tool import TrendsTools
     from src.autogen.teams.analysis_team import AnalysisTeam
-    from src.memory.in_memory_autogen_handler import InMemoryAutogenHandler
     from src.autogen.autogen_team import AutogenAgent
     from src.use_cases.iterate_analysis import IterateAnalysis
 
     connector = _resolve_trends_connector()
     tools = TrendsTools(connector).get_tools()
-    memory = InMemoryAutogenHandler()
+    memory = _resolve_memory_handler()
     handler = AutogenAgent(team_builder=AnalysisTeam(tools))
     return IterateAnalysis(chat_handler=handler, memory_handler=memory)

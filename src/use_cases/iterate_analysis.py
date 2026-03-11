@@ -13,5 +13,7 @@ class IterateAnalysis:
         self._memory_handler = memory_handler
 
     def execute(self, question: str) -> str:
-        history = self._memory_handler.get_history()
-        return self._chat_handler.handle(question, history)
+        state = self._memory_handler.get_state()
+        response, new_state = self._chat_handler.handle(question, state)
+        self._memory_handler.update_state(new_state)
+        return response

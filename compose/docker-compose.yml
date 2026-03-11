@@ -10,6 +10,10 @@ services:
       - .env
     depends_on:
       - mongo
+    develop:
+      watch:
+        - action: rebuild
+          path: ../src
 
   mongo:
     image: mongo:7
@@ -21,3 +25,15 @@ services:
       MONGO_INITDB_DATABASE: ${MONGO_DB}
     volumes:
       - ./data/mongo:/data/db
+
+  mongo-express:
+    image: mongo-express:latest
+    ports:
+      - "${MONGO_EXPRESS_PORT}:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USER}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD}
+      ME_CONFIG_MONGODB_URL: ${MONGO_URI}
+      ME_CONFIG_BASICAUTH: false
+    depends_on:
+      - mongo

@@ -15,4 +15,5 @@ dependencies = [
     "langchain>=1.2.11",
     "langchain-openai>=1.1.11",
     "uvicorn>=0.41.0",
+    "pymongo>=4.16.0",
 ]

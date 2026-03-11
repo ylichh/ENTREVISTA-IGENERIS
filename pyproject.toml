@@ -12,4 +12,6 @@ dependencies = [
     "autogen-ext[openai]>=0.4.0",
     "python-dotenv>=1.0.0",
     "praw>=7.8.0",
+    "langchain>=1.2.11",
+    "langchain-openai>=1.1.11",
 ]

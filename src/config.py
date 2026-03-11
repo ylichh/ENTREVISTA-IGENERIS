@@ -13,7 +13,7 @@ load_dotenv()
 def _resolve_trends_connector():
     connector_type = os.environ.get("TRENDS_CONNECTOR", "google")
     if connector_type == "mock":
-        from src.data_sources.mock_connector import MockTrendsConnector
+        from src.data_sources.mock.mock_connector import MockTrendsConnector
         return MockTrendsConnector()
     from src.data_sources.google_trends.connector import GoogleTrendsConnector
     return GoogleTrendsConnector()

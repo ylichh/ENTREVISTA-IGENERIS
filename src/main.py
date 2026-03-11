@@ -1,15 +1,17 @@
-import asyncio
 import os
 
+from dotenv import load_dotenv
 
-async def main_autogen():
-    from src.config import create_analysis_agent
-    from src.autogen.teams.analysis_team import TASK_TEMPLATE
+load_dotenv()
 
-    agent = create_analysis_agent()
-    task = TASK_TEMPLATE.format(destination="Andalucía")
+
+def main_autogen():
+    from src.config import create_iterate_analysis
+
+    use_case = create_iterate_analysis()
+    question = "¿A quién podría vender experiencias turísticas en Andalucía?"
     print("=== Autogen: análisis de demanda turística ===\n")
-    response = await agent.ask(task)
+    response = use_case.execute(question)
     print(response)
 
 
@@ -26,6 +28,6 @@ def main_langchain():
 if __name__ == "__main__":
     handler = os.environ.get("CHAT_HANDLER", "langchain")
     if handler == "autogen":
-        asyncio.run(main_autogen())
+        main_autogen()
     else:
         main_langchain()

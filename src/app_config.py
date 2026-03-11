@@ -22,11 +22,11 @@ def _resolve_trends_connector():
 def create_iterate_analysis():
     from src.langchain.tools.trends_tool import TrendsTools
     from src.langchain.analysis_langchain_handler import AnalysisLangchainHandler
-    from src.memory.in_memory_handler import InMemoryHandler
+    from src.memory.in_memory_langchain_handler import InMemoryLangchainHandler
     from src.use_cases.iterate_analysis import IterateAnalysis
 
     connector = _resolve_trends_connector()
     tools = TrendsTools(connector).get_tools()
-    memory = InMemoryHandler()
+    memory = InMemoryLangchainHandler()
     handler = AnalysisLangchainHandler(tools=tools)
     return IterateAnalysis(chat_handler=handler, memory_handler=memory)

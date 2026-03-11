@@ -19,10 +19,15 @@ def _resolve_trends_connector():
     return GoogleTrendsConnector()
 
 
-def create_analysis_agent():
+def create_iterate_analysis():
     from src.autogen.tools.trends_tool import TrendsTools
-    from src.autogen.teams.analysis_team import build_analysis_agent
+    from src.autogen.teams.analysis_team import AnalysisTeam
+    from src.memory.in_memory_autogen_handler import InMemoryAutogenHandler
+    from src.autogen.autogen_team import AutogenAgent
+    from src.use_cases.iterate_analysis import IterateAnalysis
 
     connector = _resolve_trends_connector()
     tools = TrendsTools(connector).get_tools()
-    return build_analysis_agent(tools)
+    memory = InMemoryAutogenHandler()
+    handler = AutogenAgent(team_builder=AnalysisTeam(tools))
+    return IterateAnalysis(chat_handler=handler, memory_handler=memory)

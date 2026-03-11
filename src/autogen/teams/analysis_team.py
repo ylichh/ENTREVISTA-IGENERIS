@@ -10,24 +10,31 @@ from autogen_agentchat.conditions import MaxMessageTermination, TextMentionTermi
 from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
-SYSTEM_MESSAGE = """
+TOURISM_EXPERT_SYSTEM_MESSAGE = """
 Eres un analista senior de demanda turística para una empresa europea de experiencias de viaje.
 
 Usa las tools disponibles para recopilar datos reales antes de producir el análisis.
 No inventes ni asumas información: si no tienes el dato, llama a la tool correspondiente.
 
-Produce una recomendación clara y accionable sobre qué experiencia promocionar, para qué tipo de cliente y por qué.
-Termina con TERMINATE.
+Produce una recomendación clara sobre qué experiencia promocionar, para qué tipo de cliente y por qué.
+La estructura de tu respuesta debe ser:
+**Analisis en base a  datos:
+Aqui debes mostrar los datos que has obtenido de las tools, sin interpretarlos ni sacar conclusiones. Solo datos.
+**Recomendación Experto: 
+Aqui puedes realizar una interpretación e incluso basarte en tu expertise más alla de los datos.
+
 """
+REVIEWER_SYSTEM_MESSAGE = """Eres un revisor de calidad. Tu tarea es revisar que la respuesta del analista sigue la estructura indicada: datos primero, luego interpretación.
+Si la respuesta es adecuada, indicalo y finaliza con un TERMINATE."""
 
 TASK_TEMPLATE = """
 ¿A quién podría vender experiencias turísticas en {destination}?
-Usa las tools disponibles para identificar los mercados de origen con mayor interés y elabora una recomendación accionable.
-Dime que paises están buscando sobre andalucia y ademas en que regiones se estan buscnado.
 """
 
 
 class AnalysisTeam:
+
+    result_agent = "tourism_analyst"
 
     def __init__(self, tools: list) -> None:
         self._tools = tools
@@ -41,8 +48,13 @@ class AnalysisTeam:
             name="tourism_analyst",
             model_client=model_client,
             tools=self._tools,
-            system_message=SYSTEM_MESSAGE,
+            system_message=TOURISM_EXPERT_SYSTEM_MESSAGE,
             reflect_on_tool_use=True,
         )
+        reviewer = AssistantAgent(
+            name="reviewer",
+            model_client=model_client,
+            system_message=REVIEWER_SYSTEM_MESSAGE,
+        )
         termination = TextMentionTermination("TERMINATE") | MaxMessageTermination(max_messages=15)
-        return RoundRobinGroupChat([agent], termination_condition=termination)
+        return RoundRobinGroupChat([agent, reviewer], termination_condition=termination)

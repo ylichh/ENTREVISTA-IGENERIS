@@ -29,13 +29,18 @@ class AutogenAgent(ChatHandler):
             await team.load_state(state)
         result = await self._ask(team, question)
         new_state = await team.save_state()
-        return result, new_state
+        return result.removesuffix("TERMINATE").strip(), new_state
 
     async def _ask(self, team, task: str) -> str:
+        result_agent = getattr(self._team_builder, "result_agent", None)
         final = ""
         async for message in team.run_stream(task=task):
             if isinstance(message, TaskResult):
-                final = message.messages[-1].content
+                if result_agent:
+                    expert_messages = [m for m in message.messages if getattr(m, "source", None) == result_agent]
+                    final = expert_messages[-1].content if expert_messages else message.messages[-1].content
+                else:
+                    final = message.messages[-1].content
             else:
                 self._print_message(message)
         return final

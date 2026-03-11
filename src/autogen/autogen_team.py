@@ -1,20 +1,39 @@
 """
-AutogenAgent: wrapper genérico sobre cualquier team de AutoGen 0.7.5.
+AutogenAgent: runner genérico para cualquier team de AutoGen.
 
-Acepta AssistantAgent, RoundRobinGroupChat, SelectorGroupChat, etc.
-Todos comparten la misma interfaz run_stream() → AsyncGenerator, por lo que
-el método ask() funciona sin cambios independientemente del team inyectado.
+Instancia el team en cada llamada a handle(), carga el estado previo
+(save_state / load_state) y lo persiste tras la ejecución.
 """
+import asyncio
+
 from autogen_agentchat.base import TaskResult
 
+from src.use_cases.port.chat_handler import ChatHandler
 
-class AutogenAgent:
-    def __init__(self, team):
-        self._team = team
 
-    async def ask(self, task: str) -> str:
+class AutogenAgent(ChatHandler):
+
+    def __init__(self, team_builder) -> None:
+        """
+        team_builder: objeto con un método build() que devuelve un RoundRobinGroupChat.
+        """
+        self._team_builder = team_builder
+        self._state: dict = {}
+
+    def handle(self, question: str, state: dict) -> tuple[str, dict]:
+        return asyncio.run(self._run(question, state))
+
+    async def _run(self, question: str, state: dict) -> tuple[str, dict]:
+        team = self._team_builder.build()
+        if state:
+            await team.load_state(state)
+        result = await self._ask(team, question)
+        new_state = await team.save_state()
+        return result, new_state
+
+    async def _ask(self, team, task: str) -> str:
         final = ""
-        async for message in self._team.run_stream(task=task):
+        async for message in team.run_stream(task=task):
             if isinstance(message, TaskResult):
                 final = message.messages[-1].content
             else:

@@ -1,8 +1,7 @@
 """
-Team de análisis de demanda turística.
+AnalysisTeam: construye el RoundRobinGroupChat de análisis turístico.
 
-Construye el AssistantAgent y lo envuelve en AutogenAgent.
-Las tools se reciben inyectadas desde el Composition Root (src/config.py).
+Recibe las tools inyectadas desde el Composition Root.
 """
 import os
 
@@ -10,8 +9,6 @@ from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.conditions import MaxMessageTermination, TextMentionTermination
 from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_ext.models.openai import OpenAIChatCompletionClient
-
-from src.autogen.autogen_team import AutogenAgent
 
 SYSTEM_MESSAGE = """
 Eres un analista senior de demanda turística para una empresa europea de experiencias de viaje.
@@ -30,18 +27,22 @@ Dime que paises están buscando sobre andalucia y ademas en que regiones se esta
 """
 
 
-def build_analysis_agent(tools: list) -> AutogenAgent:
-    model_client = OpenAIChatCompletionClient(
-        model="gpt-4o-mini",
-        api_key=os.environ["OPENAI_API_KEY"],
-    )
-    agent = AssistantAgent(
-        name="tourism_analyst",
-        model_client=model_client,
-        tools=tools,
-        system_message=SYSTEM_MESSAGE,
-        reflect_on_tool_use=True,
-    )
-    termination = TextMentionTermination("TERMINATE") | MaxMessageTermination(max_messages=15)
-    team = RoundRobinGroupChat([agent], termination_condition=termination)
-    return AutogenAgent(team=team)
+class AnalysisTeam:
+
+    def __init__(self, tools: list) -> None:
+        self._tools = tools
+
+    def build(self) -> RoundRobinGroupChat:
+        model_client = OpenAIChatCompletionClient(
+            model="gpt-4o-mini",
+            api_key=os.environ["OPENAI_API_KEY"],
+        )
+        agent = AssistantAgent(
+            name="tourism_analyst",
+            model_client=model_client,
+            tools=self._tools,
+            system_message=SYSTEM_MESSAGE,
+            reflect_on_tool_use=True,
+        )
+        termination = TextMentionTermination("TERMINATE") | MaxMessageTermination(max_messages=15)
+        return RoundRobinGroupChat([agent], termination_condition=termination)

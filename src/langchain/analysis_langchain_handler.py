@@ -37,6 +37,7 @@ class AnalysisLangchainHandler(ChatHandler):
             system_prompt=SYSTEM_PROMPT,
         )
 
-    def handle(self, question: str, history: list[BaseMessage]) -> str:
-        result = self._agent.invoke({"messages": [*history, HumanMessage(content=question)]})
-        return result["messages"][-1].content
+    def handle(self, question: str, state: list[BaseMessage]) -> tuple[str, list[BaseMessage]]:
+        result = self._agent.invoke({"messages": [*state, HumanMessage(content=question)]})
+        new_state = result["messages"]
+        return new_state[-1].content, new_state

@@ -13,6 +13,14 @@ class QuestionRequest(BaseModel):
     conversation_id: str
 
 
+class ConversationResponse(BaseModel):
+    conversation_id: str
+
+
+class AnalysisResponse(BaseModel):
+    analysis: str
+
+
 class AnalysisController:
 
     def __init__(self, use_case: AnalysisUseCase) -> None:
@@ -22,13 +30,13 @@ class AnalysisController:
 
     def _register_routes(self) -> None:
         @self._app.post("/conversation")
-        def new_conversation() -> dict:
-            return {"conversation_id": str(uuid.uuid4())}
+        def new_conversation() -> ConversationResponse:
+            return ConversationResponse(conversation_id=str(uuid.uuid4()))
 
         @self._app.post("/analyze")
-        def analyze(request: QuestionRequest) -> dict:
+        def analyze(request: QuestionRequest) -> AnalysisResponse:
             response = self._use_case.execute(request.question, request.conversation_id)
-            return {"response": response}
+            return AnalysisResponse(analysis=response)
 
     def run(self, host: str, port: int) -> None:
         uvicorn.run(self._app, host=host, port=port)

@@ -17,3 +17,8 @@ dependencies = [
     "uvicorn>=0.41.0",
     "pymongo>=4.16.0",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]

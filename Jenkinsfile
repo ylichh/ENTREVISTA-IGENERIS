@@ -18,6 +18,12 @@ pipeline {
             }
         }
 
+        stage('Test') {
+            steps {
+                sh 'docker run --rm $IMAGE_NAME python3 -m pytest tests/ -v'
+            }
+        }
+
         stage('Smoke Test') {
             steps {
                 sh "docker run --rm \$IMAGE_NAME python3 -c 'import src.main; print(\"OK\")'"

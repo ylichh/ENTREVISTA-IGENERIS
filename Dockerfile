@@ -6,8 +6,10 @@ WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
 
-RUN uv pip install --system --no-cache -r pyproject.toml
+RUN uv pip install --system --no-cache -r pyproject.toml && \
+    uv pip install --system --no-cache pytest
 
 COPY src/ ./src/
+COPY tests/ ./tests/
 
 CMD ["python3", "-m", "src.main"]
